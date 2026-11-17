@@ -217,7 +217,7 @@ function renderAgents() {
 function renderChanges(d) {
   const c = d.latestChanges || [];
   $("changes").innerHTML = c.length ? `<table><thead><tr><th>When</th><th>Computer</th><th>Change</th></tr></thead><tbody>` +
-    c.map(x => `<tr><td>${esc(when(x.at))}</td><td>${esc(x.hostname || "")}</td><td>${esc(x.summary || x.kind || "")}</td></tr>`).join("") +
+    c.map(x => `<tr><td>${esc(when(x.at || x.detectedAt))}</td><td>${esc(x.hostname || "")}</td><td>${esc(x.summary || x.kind || "")}</td></tr>`).join("") +
     `</tbody></table>` : `<div class="empty">None recorded.</div>`;
 }
 
