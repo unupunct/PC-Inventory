@@ -7,6 +7,20 @@ Self-hosted IT inventory and monitoring for a home or small-office LAN.
 
 > Status: Phase 1 is working end to end on Windows — server, agent enrollment/approval, heartbeats, metrics, inventory, change detection, dashboard and reports. The macOS and Linux collectors are implemented but have not yet been run on real hardware.
 
+## Download
+
+Prebuilt packages are attached to the [latest release](https://github.com/unupunct/PC-Inventory/releases/latest):
+
+| File | Platform |
+|---|---|
+| `pcim-1.0.0-windows-setup.exe` | Windows 10/11, Server 2016+ (x64) — installer that registers both services |
+| `pcim-1.0.0-windows.zip` | Windows x64 portable |
+| `pcim_1.0.0_amd64.deb` / `pcim-1.0.0-1.x86_64.rpm` | Debian/Ubuntu and Fedora/RHEL/Rocky (systemd) |
+| `pcim-1.0.0-linux-amd64.tar.gz` / `-arm64.tar.gz` | Any Linux, with systemd units and `install.sh` |
+| `pcim-agent-macos-arm64`, `pcim-agent-macos-amd64` | macOS 12+ agents |
+
+Build everything yourself with `scripts/build.sh` (Windows installer: `scripts/build-windows.ps1`); see [docs/PACKAGING.md](docs/PACKAGING.md).
+
 ## Quick start (Windows)
 
 ```powershell
