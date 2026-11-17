@@ -7,6 +7,21 @@ Self-hosted IT inventory and monitoring for a home or small-office LAN.
 
 > Status: Phase 1 is working end to end on Windows — server, agent enrollment/approval, heartbeats, metrics, inventory, change detection, dashboard and reports. The macOS and Linux collectors are implemented but have not yet been run on real hardware.
 
+## Screenshots
+
+![Dashboard](docs/screenshots/02-dashboard.png)
+
+*Fleet overview: computers, fleet CPU/RAM, alerts and hardware-change counts, with live updates over SSE.*
+
+| | |
+|---|---|
+| ![Computer detail and performance](docs/screenshots/04-computer-and-performance.png) | ![Hardware changes and activity](docs/screenshots/05-changes-and-activity.png) |
+| Selected computer — hardware detail beside CPU and memory charts for the last hour | Hardware changes detected by fingerprint, and the agent activity log |
+
+![Sign in](docs/screenshots/01-login.png)
+
+*These screenshots come from a development server fed by the bundled `test/sample-agent`, which sends clearly labelled synthetic data (`sample-vm-windows`, model "Synthetic (test only) Sample VM"). A real deployment shows the same screens with data from real machines — nothing on the dashboard is hard-coded.*
+
 ## Download
 
 Prebuilt packages are attached to the [latest release](https://github.com/unupunct/PC-Inventory/releases/latest):
