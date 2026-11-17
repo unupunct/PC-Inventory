@@ -1,0 +1,74 @@
+# nfpm configuration for the Linux packages (.deb and .rpm).
+#
+#   export PATH="$PATH:$(go env GOPATH)/bin"     # nfpm installed with go install
+#   scripts/build.sh                             # binaries in dist/
+#   PCIM_VERSION=1.0.0 PCIM_ARCH=amd64 PCIM_BIN=linux-amd64 \
+#     nfpm package -f packaging/nfpm.yaml -p deb --target dist/
+#   PCIM_VERSION=1.0.0 PCIM_ARCH=amd64 PCIM_BIN=linux-amd64 \
+#     nfpm package -f packaging/nfpm.yaml -p rpm --target dist/
+#
+# For ARM: PCIM_ARCH=arm64 PCIM_BIN=linux-arm64 (build the arm64 binaries first).
+# nfpm does not expand variables inside contents[].src, so scripts/build.sh
+# stages the chosen binaries as dist/server-binary and dist/agent-binary.
+name: pcim
+arch: ${PCIM_ARCH}
+platform: linux
+version: ${PCIM_VERSION}
+version_schema: semver
+section: admin
+priority: optional
+maintainer: PC Inventory Manager <admin@localhost>
+description: |
+  Self-hosted IT inventory and monitoring server and agent.
+  Collects hardware inventory, operating system details and performance
+  metrics from Windows, macOS and Linux computers on a private network and
+  presents them in a web dashboard.
+vendor: PC Inventory Manager
+homepage: https://github.com/pcim/pc-inventory-manager
+license: MIT
+
+contents:
+  - src: dist/server-binary
+    dst: /usr/local/bin/pcim-server
+    file_info:
+      mode: 0755
+  - src: dist/agent-binary
+    dst: /usr/local/bin/pcim-agent
+    file_info:
+      mode: 0755
+  - src: packaging/linux/pcim-server.service
+    dst: /lib/systemd/system/pcim-server.service
+  - src: packaging/linux/pcim-agent.service
+    dst: /lib/systemd/system/pcim-agent.service
+  - src: docs
+    dst: /usr/share/doc/pcim
+    type: tree
+  - dst: /etc/pcim
+    type: dir
+  - dst: /etc/pcim-agent
+    type: dir
+  - dst: /var/lib/pcim
+    type: dir
+    file_info:
+      owner: pcim
+      group: pcim
+      mode: 0750
+  # Empty by default (127.0.0.1 only). The server binds 0.0.0.0 when this file
+  # says so; postinst restarts the service so an edit takes effect.
+  - src: packaging/linux/server.env
+    dst: /etc/pcim/server.env
+    type: config|noreplace
+
+scripts:
+  preinstall: packaging/linux/deb-preinstall.sh
+  postinstall: packaging/linux/deb-postinstall.sh
+  preremove: packaging/linux/deb-preremove.sh
+  postremove: packaging/linux/deb-postremove.sh
+
+overrides:
+  rpm:
+    scripts:
+      preinstall: packaging/linux/rpm-preinstall.sh
+      postinstall: packaging/linux/rpm-postinstall.sh
+      preremove: packaging/linux/rpm-preremove.sh
+      postremove: packaging/linux/rpm-postremove.sh

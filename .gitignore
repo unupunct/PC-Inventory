@@ -1,0 +1,29 @@
+# Build output
+/bin/
+/dist/
+*.exe
+*.exe~
+*.test
+
+# Runtime data: database, backups, generated admin password, logs
+/data/
+*.db
+*.db-shm
+*.db-wal
+server.log
+agent.log
+agent.json
+initial-admin-password.txt
+
+# Local configuration and secrets
+.env
+*.env
+!packaging/linux/server.env
+!packaging/windows/server.env.sample
+
+# Editor / OS
+.vscode/
+.idea/
+*.swp
+.DS_Store
+Thumbs.db

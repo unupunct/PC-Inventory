@@ -1,0 +1,18 @@
+[Unit]
+Description=PC Inventory Manager Agent
+After=network-online.target
+Wants=network-online.target
+
+[Service]
+Type=simple
+ExecStart=/usr/local/bin/pcim-agent run --config /etc/pcim-agent/agent.json
+Restart=always
+RestartSec=10
+User=root
+NoNewPrivileges=true
+ProtectSystem=full
+ProtectHome=read-only
+PrivateTmp=true
+
+[Install]
+WantedBy=multi-user.target

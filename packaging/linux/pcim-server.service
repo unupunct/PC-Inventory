@@ -1,0 +1,24 @@
+[Unit]
+Description=PC Inventory Manager Server
+After=network-online.target
+Wants=network-online.target
+
+[Service]
+Type=simple
+User=pcim
+Group=pcim
+Environment=PCIM_DATA_DIR=/var/lib/pcim
+EnvironmentFile=-/etc/pcim/server.env
+ExecStart=/usr/local/bin/pcim-server
+Restart=always
+RestartSec=10
+StateDirectory=pcim
+LogsDirectory=pcim
+NoNewPrivileges=true
+ProtectSystem=strict
+ProtectHome=true
+PrivateTmp=true
+ReadWritePaths=/var/lib/pcim
+
+[Install]
+WantedBy=multi-user.target

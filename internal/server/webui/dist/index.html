@@ -1,0 +1,322 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>PC Inventory Manager</title>
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<style>
+  :root{
+    --bg:#0b0f16; --panel:#121826; --panel2:#161e2e; --line:#243044;
+    --text:#e6edf7; --muted:#8b9bb4; --accent:#3b82f6; --accent2:#22d3ee;
+    --ok:#22c55e; --warn:#f59e0b; --bad:#ef4444;
+  }
+  *{box-sizing:border-box}
+  body{margin:0;background:var(--bg);color:var(--text);font:14px/1.5 system-ui,"Segoe UI",Roboto,sans-serif}
+  a{color:var(--accent2);text-decoration:none}
+  header{display:flex;align-items:center;gap:16px;padding:14px 22px;border-bottom:1px solid var(--line);background:var(--panel)}
+  .brand{font-weight:700;letter-spacing:.3px}
+  .brand span{color:var(--accent2)}
+  .grow{flex:1}
+  .chip{display:inline-flex;align-items:center;gap:6px;padding:3px 10px;border-radius:999px;font-size:12px;border:1px solid var(--line);color:var(--muted)}
+  .dot{width:8px;height:8px;border-radius:50%;background:var(--muted)}
+  .dot.on{background:var(--ok);box-shadow:0 0 8px var(--ok)}
+  .dot.off{background:var(--bad)}
+  main{padding:22px;max-width:1400px;margin:0 auto}
+  .cards{display:grid;grid-template-columns:repeat(auto-fit,minmax(180px,1fr));gap:14px;margin-bottom:22px}
+  .card{background:linear-gradient(180deg,var(--panel2),var(--panel));border:1px solid var(--line);border-radius:12px;padding:16px}
+  .card .label{font-size:12px;color:var(--muted);text-transform:uppercase;letter-spacing:.6px}
+  .card .value{font-size:26px;font-weight:700;margin-top:6px}
+  .card .sub{font-size:12px;color:var(--muted)}
+  section{background:var(--panel);border:1px solid var(--line);border-radius:12px;margin-bottom:18px;overflow:hidden}
+  section h2{margin:0;padding:13px 18px;font-size:13px;letter-spacing:.8px;text-transform:uppercase;color:var(--muted);border-bottom:1px solid var(--line)}
+  table{width:100%;border-collapse:collapse}
+  th,td{padding:10px 14px;text-align:left;border-bottom:1px solid var(--line);font-size:13px;vertical-align:top}
+  th{color:var(--muted);font-weight:600;font-size:12px;text-transform:uppercase;letter-spacing:.5px}
+  tr:last-child td{border-bottom:none}
+  .kv{display:grid;grid-template-columns:200px 1fr;gap:0}
+  .kv div{padding:8px 18px;border-bottom:1px solid var(--line);font-size:13px}
+  .kv div:nth-child(odd){color:var(--muted)}
+  .bar{height:6px;background:#0a1019;border-radius:4px;overflow:hidden;margin-top:6px}
+  .bar i{display:block;height:100%;background:linear-gradient(90deg,var(--accent),var(--accent2))}
+  .login{max-width:360px;margin:14vh auto;background:var(--panel);border:1px solid var(--line);border-radius:14px;padding:26px}
+  .login h1{font-size:18px;margin:0 0 18px}
+  input{width:100%;padding:10px 12px;margin-bottom:12px;background:#0a1019;border:1px solid var(--line);border-radius:8px;color:var(--text);font:inherit}
+  button{padding:10px 16px;background:var(--accent);border:0;border-radius:8px;color:#fff;font:inherit;font-weight:600;cursor:pointer}
+  button.ghost{background:transparent;border:1px solid var(--line);color:var(--text);font-weight:500}
+  button:disabled{opacity:.6;cursor:default}
+  .err{color:var(--bad);font-size:13px;margin-bottom:10px}
+  .muted{color:var(--muted)}
+  .tag{font-size:11px;padding:2px 8px;border-radius:6px;background:#1d2740;color:var(--accent2)}
+  .tag.ok{background:#14321f;color:var(--ok)}
+  .tag.bad{background:#3a1717;color:var(--bad)}
+  .tag.warn{background:#3a2c12;color:var(--warn)}
+  .grid2{display:grid;grid-template-columns:1fr 1fr;gap:18px}
+  @media(max-width:900px){.grid2{grid-template-columns:1fr}.kv{grid-template-columns:1fr}}
+  .empty{padding:18px;color:var(--muted);font-size:13px}
+  svg.spark{display:block;width:100%;height:70px}
+</style>
+</head>
+<body>
+
+<div id="login" class="login" hidden>
+  <h1>PC Inventory Manager</h1>
+  <div id="loginErr" class="err" hidden></div>
+  <input id="u" placeholder="Username" autocomplete="username" value="admin">
+  <input id="p" placeholder="Password" type="password" autocomplete="current-password">
+  <button id="loginBtn">Sign in</button>
+</div>
+
+<div id="app" hidden>
+  <header>
+    <div class="brand">PC <span>Inventory</span> Manager</div>
+    <div class="chip"><span id="connDot" class="dot"></span><span id="connText">connecting</span></div>
+    <div class="grow"></div>
+    <div class="chip" id="serverName">—</div>
+    <button class="ghost" id="logout">Sign out</button>
+  </header>
+  <main>
+    <div class="cards" id="cards"></div>
+
+    <section>
+      <h2>Computers</h2>
+      <div id="agents"></div>
+    </section>
+
+    <div class="grid2">
+      <section>
+        <h2>Selected computer</h2>
+        <div id="detail"><div class="empty">Select a computer above.</div></div>
+      </section>
+      <section>
+        <h2>Performance (last hour)</h2>
+        <div id="perf"><div class="empty">Select a computer above.</div></div>
+      </section>
+    </div>
+
+    <div class="grid2">
+      <section>
+        <h2>Hardware changes</h2>
+        <div id="changes"><div class="empty">None recorded.</div></div>
+      </section>
+      <section>
+        <h2>Activity</h2>
+        <div id="events"><div class="empty">No events.</div></div>
+      </section>
+    </div>
+  </main>
+</div>
+
+<script>
+"use strict";
+const $ = (id) => document.getElementById(id);
+const esc = (s) => String(s ?? "").replace(/[&<>"']/g, c => ({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c]));
+const nf = new Intl.NumberFormat();
+const bytes = (b) => {
+  if (b === null || b === undefined) return "—";
+  const u = ["B","KB","MB","GB","TB"]; let i = 0, v = Number(b);
+  while (v >= 1024 && i < u.length - 1) { v /= 1024; i++; }
+  return (v >= 10 || i === 0 ? v.toFixed(0) : v.toFixed(1)) + " " + u[i];
+};
+const pct = (v) => (v === null || v === undefined) ? "—" : Number(v).toFixed(1) + "%";
+const when = (t) => {
+  if (!t) return "never";
+  const d = new Date(t), s = (Date.now() - d.getTime()) / 1000;
+  if (s < 60) return Math.max(0, Math.round(s)) + "s ago";
+  if (s < 3600) return Math.round(s / 60) + "m ago";
+  if (s < 86400) return Math.round(s / 3600) + "h ago";
+  return d.toLocaleDateString() + " " + d.toLocaleTimeString([], {hour:"2-digit",minute:"2-digit"});
+};
+const dt = (t) => t ? new Date(t).toLocaleString() : "—";
+
+let state = { agents: [], dashboard: null, selected: null, me: null };
+
+async function api(path, opts = {}) {
+  const r = await fetch(path, { credentials: "same-origin", headers: { "Content-Type": "application/json" }, ...opts });
+  if (r.status === 401) { showLogin(); throw new Error("unauthorized"); }
+  if (!r.ok) {
+    let msg = r.statusText;
+    try { msg = (await r.json()).error || msg; } catch {}
+    throw new Error(msg);
+  }
+  return r.status === 204 ? null : r.json();
+}
+
+function showLogin() { $("login").hidden = false; $("app").hidden = true; }
+function showApp() { $("login").hidden = true; $("app").hidden = false; }
+
+$("loginBtn").onclick = async () => {
+  $("loginErr").hidden = true;
+  $("loginBtn").disabled = true;
+  try {
+    await api("/api/auth/login", { method: "POST", body: JSON.stringify({ username: $("u").value, password: $("p").value }) });
+    await boot();
+  } catch (e) {
+    $("loginErr").textContent = e.message;
+    $("loginErr").hidden = false;
+  } finally { $("loginBtn").disabled = false; }
+};
+$("p").addEventListener("keydown", (e) => { if (e.key === "Enter") $("loginBtn").click(); });
+$("logout").onclick = async () => { try { await api("/api/auth/logout", { method: "POST" }); } catch {} showLogin(); };
+
+async function boot() {
+  state.me = await api("/api/auth/me");
+  showApp();
+  $("serverName").textContent = state.me.serverName || "server";
+  await refresh();
+  connectStream();
+}
+
+async function refresh() {
+  const [agents, dash] = await Promise.all([api("/api/agents"), api("/api/dashboard")]);
+  state.agents = agents.agents || agents || [];
+  state.dashboard = dash;
+  renderCards();
+  renderAgents();
+  renderChanges(dash);
+  renderEvents(dash);
+  if (state.selected) await selectAgent(state.selected, true);
+}
+
+function renderCards() {
+  const d = state.dashboard || {};
+  const f = d.fleet || {};
+  const agents = state.agents;
+  const online = agents.filter(a => a.online).length;
+  const total = agents.filter(a => a.status === "approved").length;
+  const ram = d.ramDistribution?.reduce((t, r) => t + (r.value || 0), 0);
+  const cards = [
+    ["Computers", total, `${online} online · ${total - online} offline`],
+    ["Fleet CPU", pct(f.avgCpuPercent), "average of reporting computers"],
+    ["Fleet RAM", pct(f.avgRamPercent), "average of reporting computers"],
+    ["Reporting", f.reportingAgents ?? 0, "sent metrics recently"],
+    ["Active alerts", (d.activeAlerts || []).length, `${d.alertCounts?.critical || 0} critical`],
+    ["Hardware changes", (d.latestChanges || []).length, "recent detections"],
+  ];
+  $("cards").innerHTML = cards.map(([l, v, s]) =>
+    `<div class="card"><div class="label">${esc(l)}</div><div class="value">${esc(v)}</div><div class="sub">${esc(s)}</div></div>`).join("");
+}
+
+function renderAgents() {
+  const a = state.agents;
+  if (!a.length) { $("agents").innerHTML = `<div class="empty">No computers yet. Install the agent on a computer and point it at this server.</div>`; return; }
+  $("agents").innerHTML = `<table><thead><tr>
+      <th>Computer</th><th>Status</th><th>OS</th><th>CPU</th><th>RAM</th><th>Last heartbeat</th><th></th>
+    </tr></thead><tbody>` + a.map(x => `
+    <tr>
+      <td><strong>${esc(x.displayName || x.hostname)}</strong><div class="muted" style="font-size:12px">${esc(x.primaryIp || "")} ${esc(x.platform || "")}</div></td>
+      <td><span class="tag ${x.status === "approved" ? (x.online ? "ok" : "bad") : "warn"}">${esc(x.status === "approved" ? (x.online ? "online" : "offline") : x.status)}</span></td>
+      <td>${esc(x.osName || "—")} ${esc(x.osVersion || "")}</td>
+      <td>${esc(x.cpuBrand || "—")}</td>
+      <td>${bytes(x.ramBytes)}</td>
+      <td>${esc(when(x.lastHeartbeatAt))}</td>
+      <td><button class="ghost" data-agent="${esc(x.id)}">Details</button></td>
+    </tr>`).join("") + `</tbody></table>`;
+  $("agents").querySelectorAll("[data-agent]").forEach(b => b.onclick = () => selectAgent(b.dataset.agent));
+}
+
+function renderChanges(d) {
+  const c = d.latestChanges || [];
+  $("changes").innerHTML = c.length ? `<table><thead><tr><th>When</th><th>Computer</th><th>Change</th></tr></thead><tbody>` +
+    c.map(x => `<tr><td>${esc(when(x.at))}</td><td>${esc(x.hostname || "")}</td><td>${esc(x.summary || x.kind || "")}</td></tr>`).join("") +
+    `</tbody></table>` : `<div class="empty">None recorded.</div>`;
+}
+
+function renderEvents(d) {
+  const e = d.recentEvents || [];
+  $("events").innerHTML = e.length ? `<table><thead><tr><th>When</th><th>Computer</th><th>Event</th></tr></thead><tbody>` +
+    e.map(x => `<tr><td>${esc(when(x.at))}</td><td>${esc(x.hostname || "")}</td><td>${esc(x.message || x.kind)}</td></tr>`).join("") +
+    `</tbody></table>` : `<div class="empty">No events.</div>`;
+}
+
+async function selectAgent(id, quiet) {
+  state.selected = id;
+  if (!quiet) { $("detail").innerHTML = `<div class="empty">Loading…</div>`; $("perf").innerHTML = `<div class="empty">Loading…</div>`; }
+  const [inv, perf] = await Promise.all([
+    api(`/api/agents/${id}/inventory`).catch(() => null),
+    api(`/api/agents/${id}/performance?range=1h`).catch(() => null),
+  ]);
+  renderDetail(inv);
+  renderPerf(perf);
+}
+
+function kv(rows) {
+  return `<div class="kv">` + rows.filter(r => r).map(([k, v]) => `<div>${esc(k)}</div><div>${v}</div>`).join("") + `</div>`;
+}
+
+function renderDetail(resp) {
+  const inv = resp && (resp.inventory || resp.current || resp);
+  if (!inv || !inv.host) { $("detail").innerHTML = `<div class="empty">No inventory received from this computer yet.</div>`; return; }
+  const h = inv.host, os = inv.os || {}, cpu = inv.cpu || {}, mem = inv.memory || {}, mb = inv.motherboard || {};
+  const disks = inv.physicalDisks || [], gpus = inv.gpus || [], vols = inv.volumes || [], nics = inv.netAdapters || [];
+  const battery = (inv.batteries || [])[0];
+  $("detail").innerHTML = kv([
+    ["Hostname", esc(h.hostname)],
+    ["Model", esc([h.manufacturer, h.model].filter(Boolean).join(" ") || "—")],
+    ["Serial", esc(h.serialNumber || "—")],
+    ["OS", esc(`${os.name || ""} ${os.version || ""} (build ${os.build || "—"})`)],
+    ["Architecture", esc(os.arch || "—")],
+    ["Uptime", esc(Math.floor((os.uptimeSeconds || 0) / 3600) + "h " + Math.floor(((os.uptimeSeconds || 0) % 3600) / 60) + "m")],
+    ["CPU", esc(`${cpu.manufacturer || ""} ${cpu.brand || "—"} · ${cpu.physicalCores || "?"}C/${cpu.logicalCores || "?"}T`)],
+    ["Memory", `${bytes(mem.totalBytes)} total` + (mem.modules && mem.modules.length ? ` · ${mem.modules.length} module(s)` : "")],
+    ["Motherboard", esc([mb.manufacturer, mb.product].filter(Boolean).join(" ") || "—")],
+    ["BIOS", esc([mb.biosVendor, mb.biosVersion, mb.biosDate].filter(Boolean).join(" ") || "—")],
+    gpus.length ? ["GPU", gpus.map(g => esc(`${g.name}${g.vramBytes ? " (" + bytes(g.vramBytes) + ")" : ""}`)).join("<br>")] : null,
+    disks.length ? ["Disks", disks.map(d => esc(`${d.model || d.name} · ${bytes(d.capacityBytes)} · ${d.mediaType || ""}${d.health ? " · " + d.health : ""}`)).join("<br>")] : null,
+    vols.length ? ["Volumes", vols.map(v => `${esc(v.mount || v.name)} ${bytes(v.usedBytes)} / ${bytes(v.totalBytes)}`).join("<br>")] : null,
+    nics.length ? ["Network", nics.filter(n => n.kind !== "loopback").map(n => esc(`${n.name} ${n.ipv4?.[0] || ""} ${n.mac || ""}`)).join("<br>")] : null,
+    battery ? ["Battery", esc(`${battery.name || "battery"} · ${pct(battery.percent)}${battery.healthPercent ? " · health " + pct(battery.healthPercent) : ""}`)] : null,
+    ["Collected", esc(dt(inv.collectedAt))],
+  ]);
+}
+
+function renderPerf(resp) {
+  const samples = (resp && resp.samples) || [];
+  if (!samples.length) { $("perf").innerHTML = `<div class="empty">No performance samples yet.</div>`; return; }
+  const last = samples[samples.length - 1];
+  const cpu = samples.map(s => s.cpuPercent || 0);
+  const mem = samples.map(s => s.memPercent || 0);
+  $("perf").innerHTML =
+    kv([
+      ["CPU now", `${pct(last.cpuPercent)}<div class="bar"><i style="width:${Math.min(100, last.cpuPercent || 0)}%"></i></div>`],
+      ["Memory now", `${pct(last.memPercent)} (${bytes(last.memUsedBytes)} / ${bytes(last.memTotalBytes)})<div class="bar"><i style="width:${Math.min(100, last.memPercent || 0)}%"></i></div>`],
+      ["Disk usage (max volume)", `${pct(last.maxVolumeUsage)}<div class="bar"><i style="width:${Math.min(100, last.maxVolumeUsage || 0)}%"></i></div>`],
+      ["Processes", esc(nf.format(last.processCount || 0))],
+      ["Samples", esc(samples.length + " in the last hour")],
+    ]) +
+    `<div style="padding:12px 18px"><div class="muted" style="font-size:12px;margin-bottom:6px">CPU %</div>${spark(cpu, 0, 100)}</div>` +
+    `<div style="padding:0 18px 14px"><div class="muted" style="font-size:12px;margin-bottom:6px">Memory %</div>${spark(mem, 0, 100)}</div>`;
+}
+
+function spark(vals, min, max) {
+  if (!vals.length) return "";
+  const w = 600, h = 70, n = vals.length;
+  const x = (i) => (n === 1 ? w / 2 : (i / (n - 1)) * w);
+  const y = (v) => h - ((Math.max(min, Math.min(max, v)) - min) / (max - min)) * (h - 6) - 3;
+  const pts = vals.map((v, i) => `${x(i).toFixed(1)},${y(v).toFixed(1)}`).join(" ");
+  const area = `0,${h} ` + pts + ` ${w},${h}`;
+  return `<svg class="spark" viewBox="0 0 ${w} ${h}" preserveAspectRatio="none">
+    <polygon points="${area}" fill="rgba(59,130,246,.18)"></polygon>
+    <polyline points="${pts}" fill="none" stroke="#22d3ee" stroke-width="1.6"></polyline>
+  </svg>`;
+}
+
+function connectStream() {
+  const es = new EventSource("/api/stream");
+  const dot = $("connDot"), txt = $("connText");
+  es.onopen = () => { dot.className = "dot on"; txt.textContent = "live"; };
+  es.onerror = () => { dot.className = "dot off"; txt.textContent = "reconnecting"; };
+  let timer = null;
+  const onChange = () => {
+    if (timer) return;
+    timer = setTimeout(() => { timer = null; refresh().catch(() => {}); }, 1500);
+  };
+  ["agents", "metrics", "inventory", "changes", "alerts", "enrollment"].forEach(ev => es.addEventListener(ev, onChange));
+}
+
+(async () => {
+  try { await boot(); }
+  catch { showLogin(); }
+})();
+</script>
+</body>
+</html>
