@@ -5,12 +5,14 @@ import (
 	"fmt"
 	"net/http"
 	"sort"
+	"strconv"
 	"strings"
 	"time"
 
 	"github.com/pcim/pc-inventory-manager/internal/server/auth"
 	"github.com/pcim/pc-inventory-manager/internal/server/store"
 	"github.com/pcim/pc-inventory-manager/internal/shared/models"
+	"github.com/pcim/pc-inventory-manager/internal/shared/version"
 )
 
 func jsonMarshal(v any) ([]byte, error) { return json.Marshal(v) }
@@ -328,6 +330,24 @@ func (s *Server) handleGetAgentInventory(w http.ResponseWriter, r *http.Request)
 	writeJSON(w, 200, map[string]any{"inventory": snap.Inventory, "snapshotId": snap.ID, "collectedAt": snap.CollectedAt, "receivedAt": snap.ReceivedAt, "hash": snap.Hash})
 }
 
+// handleSoftwareDiff compares the software list of two snapshots (default: the
+// two most recent ones).
+func (s *Server) handleSoftwareDiff(w http.ResponseWriter, r *http.Request) {
+	a := s.agentOr404(w, r)
+	if a == nil {
+		return
+	}
+	q := r.URL.Query()
+	fromID, _ := strconv.ParseInt(q.Get("from"), 10, 64)
+	toID, _ := strconv.ParseInt(q.Get("to"), 10, 64)
+	diff, err := s.Store.SoftwareDiff(r.Context(), a.ID, fromID, toID)
+	if err != nil {
+		writeErr(w, 404, "no inventory snapshots to compare: "+err.Error())
+		return
+	}
+	writeJSON(w, 200, diff)
+}
+
 func (s *Server) handleGetAgentPerformance(w http.ResponseWriter, r *http.Request) {
 	a := s.agentOr404(w, r)
 	if a == nil {
@@ -639,7 +659,7 @@ func (s *Server) handleHealth(w http.ResponseWriter, r *http.Request) {
 	}
 	writeJSON(w, 200, map[string]any{
 		"serverName":          s.serverName(ctx),
-		"version":             "1.0.0",
+		"version":             version.Version,
 		"uptimeSec":           int(time.Since(s.StartedAt).Seconds()),
 		"startedAt":           s.StartedAt,
 		"dbPath":              s.Cfg.DBPath,

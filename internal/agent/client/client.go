@@ -197,3 +197,62 @@ func (c *Client) Config(ctx context.Context) (map[string]any, error) {
 	}
 	return out.Config, nil
 }
+
+// ---------------------------------------------------------------------------
+// Auto-update
+// ---------------------------------------------------------------------------
+
+// UpdateInfo describes a published agent release.
+type UpdateInfo struct {
+	Version     string    `json:"version"`
+	Platform    string    `json:"platform"`
+	Arch        string    `json:"arch"`
+	Filename    string    `json:"filename"`
+	SHA256      string    `json:"sha256"`
+	SizeBytes   int64     `json:"sizeBytes"`
+	PublishedAt time.Time `json:"publishedAt"`
+}
+
+// CheckUpdate asks the server whether a newer agent build exists for this
+// platform. Returns nil when updates are disabled or the agent is current.
+func (c *Client) CheckUpdate(ctx context.Context, platform, arch, current string) (*UpdateInfo, string, error) {
+	var out struct {
+		Enabled bool        `json:"enabled"`
+		Update  *UpdateInfo `json:"update"`
+		Message string      `json:"message"`
+	}
+	path := fmt.Sprintf("/api/agent/update?platform=%s&arch=%s&current=%s", platform, arch, current)
+	if err := c.do(ctx, http.MethodGet, path, nil, &out, true, nil); err != nil {
+		return nil, "", err
+	}
+	if !out.Enabled || out.Update == nil {
+		return nil, out.Message, nil
+	}
+	return out.Update, out.Message, nil
+}
+
+// DownloadUpdate streams the announced update to dst.
+func (c *Client) DownloadUpdate(ctx context.Context, platform, arch string, dst io.Writer) error {
+	path := fmt.Sprintf("/api/agent/update/download?platform=%s&arch=%s", platform, arch)
+	req, err := http.NewRequestWithContext(ctx, http.MethodGet, c.BaseURL+path, nil)
+	if err != nil {
+		return err
+	}
+	req.Header.Set("Authorization", "Bearer "+c.Token)
+	req.Header.Set("X-Agent-Id", c.AgentID)
+	req.Header.Set("User-Agent", "pcim-agent/1.0")
+	resp, err := c.HTTP.Do(req)
+	if err != nil {
+		return err
+	}
+	defer resp.Body.Close()
+	if resp.StatusCode == http.StatusUnauthorized {
+		return ErrUnauthorized
+	}
+	if resp.StatusCode >= 300 {
+		data, _ := io.ReadAll(io.LimitReader(resp.Body, 4096))
+		return &HTTPError{Status: resp.StatusCode, Body: string(data), Message: string(data)}
+	}
+	_, err = io.Copy(dst, resp.Body)
+	return err
+}

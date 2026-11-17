@@ -96,6 +96,28 @@ func (a *Agent) takeLogs() []models.LogEntry {
 }
 
 // Run starts the agent loop until the context is cancelled.
+// loopUpdate asks the server for a newer agent build shortly after start and
+// then every six hours. The check is cheap and does nothing unless the server
+// admin published a release and auto-update is enabled in the agent config.
+func (a *Agent) loopUpdate(ctx context.Context) {
+	select {
+	case <-ctx.Done():
+		return
+	case <-time.After(30 * time.Second):
+	}
+	a.checkForUpdate(ctx)
+	t := time.NewTicker(6 * time.Hour)
+	defer t.Stop()
+	for {
+		select {
+		case <-ctx.Done():
+			return
+		case <-t.C:
+			a.checkForUpdate(ctx)
+		}
+	}
+}
+
 func (a *Agent) Run(ctx context.Context) error {
 	if a.Cfg.ServerURL == "" {
 		return errors.New("no server address configured (run: pcim-agent config --server <address>)")
@@ -126,6 +148,7 @@ func (a *Agent) Run(ctx context.Context) error {
 	go a.loopMetrics(ctx)
 	go a.loopInventory(ctx)
 	go a.loopFlush(ctx)
+	go a.loopUpdate(ctx)
 	<-ctx.Done()
 	return nil
 }

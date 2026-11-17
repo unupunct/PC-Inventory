@@ -104,6 +104,60 @@ pcim-agent config --show
 
 Prefer the dashboard for fleets: settings there apply to the default configuration for all agents, and per-computer overrides are kept in `config_json` on the agent record.
 
+## Monitoring integration
+
+### Prometheus
+
+Set a scrape token on the Settings page (or with `PCIM_METRICS_TOKEN`) and point
+Prometheus at the server:
+
+```yaml
+scrape_configs:
+  - job_name: pcim
+    static_configs:
+      - targets: ["192.168.1.10:8080"]
+    metrics_path: /metrics
+    params:
+      token: ["<metrics_token>"]
+```
+
+The metric list is in [API_DOCUMENTATION.md](API_DOCUMENTATION.md#prometheus-metrics).
+A metric that has no sample behind it is not emitted, so a Grafana panel shows a
+gap rather than a false zero.
+
+### Scheduled report emails
+
+On the Settings page, under **Scheduled reports**:
+
+| Field | Meaning |
+| --- | --- |
+| Email reports daily | Master switch |
+| Time (`HH:MM`) | Server local time, one send per day |
+| Format | `pdf` or `csv` |
+| Reports | Comma separated: `inventory`, `network`, `storage`, `distribution`, `changes` |
+| Recipients | Comma separated addresses; empty falls back to `PCIM_ALERT_EMAIL_TO` |
+
+Email needs SMTP configured on the server (`PCIM_SMTP_HOST`, `PCIM_SMTP_PORT`,
+`PCIM_SMTP_USER`, `PCIM_SMTP_PASSWORD`, `PCIM_SMTP_FROM`). When SMTP is missing
+the run is skipped and the reason is written to the server event log; nothing is
+pretended to have been sent.
+
+### Agent auto-update
+
+1. Put an agent build in the server's data folder as
+   `updates/<platform>/<arch>/pcim-agent-<version>-<platform>-<arch>[.exe]`
+   (for example `updates/windows/amd64/pcim-agent-1.1.0-windows-amd64.exe`).
+2. Restart the server (or wait for the next start): it indexes the file, hashes
+   it and records the version.
+3. Tick **Offer agents a newer build** on the Settings page.
+
+Each agent then asks every six hours; when a different version is published it
+downloads the file over its authenticated connection, verifies the SHA256,
+replaces its own binary and exits so SCM/systemd/launchd starts the new build.
+If the size or checksum does not match, the download is discarded and the agent
+keeps running its current build. Every check, update and failure is in the agent
+log and visible in the dashboard.
+
 ## Runtime behaviour worth knowing
 
 - **Offline buffer**: when a report cannot be delivered, it is written to a local queue (default cap 5000 items). Metrics overflow first; inventory reports are kept preferentially. The queue flushes oldest-first every 45 seconds when the server is reachable.

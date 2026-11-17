@@ -271,7 +271,7 @@ func coalesce(a, b string) string {
 	return b
 }
 
-func (s *Server) handleMetrics(w http.ResponseWriter, r *http.Request) {
+func (s *Server) handleAgentMetrics(w http.ResponseWriter, r *http.Request) {
 	agent := agentFrom(r.Context())
 	var req models.MetricsRequest
 	if err := decodeJSON(r, &req); err != nil {

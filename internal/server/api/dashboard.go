@@ -465,6 +465,9 @@ func (s *Server) handleUpdateSettings(w http.ResponseWriter, r *http.Request) {
 		"server_name": true, "enrollment_enabled": true, "auto_approve_agents": true,
 		"backup_dir": true, "theme": true, "dashboard_refresh_sec": true,
 		"low_disk_threshold": true, "default_agent_config": true, "notes": true,
+		"metrics_token": true, "report_schedule": true, "report_recipients": true,
+		"agent_auto_update": true, "report_schedule_enabled": true, "report_kinds": true,
+		"report_format": true,
 	}
 	for k, v := range body.Settings {
 		if !allowed[k] {

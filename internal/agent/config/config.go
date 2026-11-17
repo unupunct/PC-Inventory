@@ -37,6 +37,7 @@ type Config struct {
 	CollectInstalledApps bool `json:"collectInstalledApps"`
 	CollectWindowsUpdates bool `json:"collectWindowsUpdates"`
 	CollectLoggedInUser bool `json:"collectLoggedInUser"`
+	AutoUpdate      bool   `json:"autoUpdate"`
 	ConfigVersion   int    `json:"configVersion"`
 	InsecureTLS     bool   `json:"insecureTls"`
 	LogLevel        string `json:"logLevel"`
@@ -60,6 +61,7 @@ func Default() Config {
 		CollectInstalledApps:  true,
 		CollectWindowsUpdates: true,
 		CollectLoggedInUser:   false,
+		AutoUpdate:            true,
 		ConfigVersion:         0,
 		LogLevel:              "info",
 	}

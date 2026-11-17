@@ -191,6 +191,13 @@ func run(ctx context.Context, opts runOptions, asService bool) error {
 	bgCtx, bgCancel := context.WithCancel(context.Background())
 	defer bgCancel()
 	go runBackground(bgCtx, srv, engine, logger)
+	srv.RecordReportSettingsDefaults(bgCtx)
+	if n, err := st.ScanAgentUpdates(bgCtx, cfg.DataDir); err != nil {
+		logger.Warn("agent update scan failed", "err", err)
+	} else if n > 0 {
+		logger.Info("agent update releases indexed", "count", n)
+	}
+	srv.StartReportScheduler(bgCtx)
 
 	httpServer := &http.Server{
 		Addr:              net.JoinHostPort(cfg.ListenHost, strconv.Itoa(cfg.Port)),

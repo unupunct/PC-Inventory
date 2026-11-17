@@ -59,11 +59,13 @@ func (s *Server) Handler() http.Handler {
 	// --- Agent API (token authenticated, no session) ---
 	mux.HandleFunc("POST /api/agent/enroll", s.handleEnroll)
 	mux.HandleFunc("POST /api/agent/heartbeat", s.agentAuth(s.handleHeartbeat))
-	mux.HandleFunc("POST /api/agent/metrics", s.agentAuth(s.handleMetrics))
+	mux.HandleFunc("POST /api/agent/metrics", s.agentAuth(s.handleAgentMetrics))
 	mux.HandleFunc("POST /api/agent/inventory", s.agentAuth(s.handleInventory))
 	mux.HandleFunc("POST /api/agent/logs", s.agentAuth(s.handleAgentLogs))
 	mux.HandleFunc("GET /api/agent/config", s.agentAuth(s.handleAgentConfig))
 	mux.HandleFunc("POST /api/agent/rotate-token", s.agentAuth(s.handleRotateToken))
+	mux.HandleFunc("GET /api/agent/update", s.agentAuth(s.handleAgentUpdateCheck))
+	mux.HandleFunc("GET /api/agent/update/download", s.agentAuth(s.handleAgentUpdateDownload))
 	mux.HandleFunc("GET /api/agent/ping", s.handleAgentPing)
 
 	// --- Admin API (session authenticated) ---
@@ -90,6 +92,7 @@ func (s *Server) Handler() http.Handler {
 	mux.HandleFunc("GET /api/agents/{id}/inventory", s.sessionAuth(s.handleGetAgentInventory))
 	mux.HandleFunc("GET /api/agents/{id}/performance", s.sessionAuth(s.handleGetAgentPerformance))
 	mux.HandleFunc("GET /api/agents/{id}/snapshots", s.sessionAuth(s.handleGetSnapshots))
+	mux.HandleFunc("GET /api/agents/{id}/software-diff", s.sessionAuth(s.handleSoftwareDiff))
 	mux.HandleFunc("GET /api/enrollments", s.sessionAuth(s.handleListEnrollments))
 	mux.HandleFunc("GET /api/inventory", s.sessionAuth(s.handleInventoryList))
 	mux.HandleFunc("GET /api/changes", s.sessionAuth(s.handleListChanges))
@@ -115,6 +118,9 @@ func (s *Server) Handler() http.Handler {
 	mux.HandleFunc("POST /api/discovery/devices", s.sessionAuth(s.handleAddDevice))
 	mux.HandleFunc("DELETE /api/discovery/devices/{id}", s.sessionAuth(s.handleDeleteDevice))
 	mux.HandleFunc("GET /api/system", s.handleSystemInfo)
+
+	// --- Prometheus scraping (token in the URL, no session cookie needed) ---
+	mux.HandleFunc("GET /metrics", s.metricsAuth(s.handleMetrics))
 
 	// --- Static web UI ---
 	mux.Handle("/", webui.Handler())

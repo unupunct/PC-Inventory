@@ -5,22 +5,38 @@ Self-hosted IT inventory and monitoring for a home or small-office LAN.
 - **Server** (Go, single binary): REST API, SQLite storage, embedded web dashboard, SSE live updates, hardware-change detection, performance history, alerts, reports (CSV/PDF), backups.
 - **Agent** (Go, single binary): Windows, macOS and Linux. Collects real hardware, OS, network and performance data from the host and reports it to the server over **outbound** HTTP(S) only.
 
-> Status: Phase 1 is working end to end on Windows — server, agent enrollment/approval, heartbeats, metrics, inventory, change detection, dashboard and reports. The macOS and Linux collectors are implemented but have not yet been run on real hardware.
+> Status: Phase 1 is working end to end on Windows — server, agent enrollment/approval, heartbeats, metrics, inventory, change detection, dashboard, reports, Prometheus metrics, software diff, scheduled report emails and agent auto-update. The macOS and Linux collectors are implemented but have not yet been run on real hardware.
 
 ## Screenshots
 
-![Dashboard](docs/screenshots/02-dashboard.png)
+The dashboard is a React + TypeScript + Tailwind app built into the server binary.
 
-*Fleet overview: computers, fleet CPU/RAM, alerts and hardware-change counts, with live updates over SSE.*
+![Dashboard](docs/screenshots-v2/02-overview.png)
+
+*Fleet overview: computers, fleet CPU/RAM, alerts and hardware changes, OS/CPU/storage distributions, all live over SSE.*
 
 | | |
 |---|---|
-| ![Computer detail and performance](docs/screenshots/04-computer-and-performance.png) | ![Hardware changes and activity](docs/screenshots/05-changes-and-activity.png) |
-| Selected computer — hardware detail beside CPU and memory charts for the last hour | Hardware changes detected by fingerprint, and the agent activity log |
+| ![Computer detail](docs/screenshots-v2/04-computer-hardware.png) | ![Performance](docs/screenshots-v2/05-performance.png) |
+| Selected computer — hardware, OS, CPU, memory modules, disks, volumes, adapters and any collection notes | CPU, memory, disk and network charts over 1 h / 6 h / 24 h / 7 d / 30 d, plus a software diff between inventories |
 
-![Sign in](docs/screenshots/01-login.png)
+| | |
+|---|---|
+| ![Alerts](docs/screenshots-v2/06-alerts.png) | ![Settings](docs/screenshots-v2/07-settings.png) |
+| Alerts with acknowledge/resolve and per-rule thresholds | Settings: server, agent collection, auto-update, scheduled reports, Prometheus token |
+
+![Sign in](docs/screenshots-v2/01-login.png)
 
 *These screenshots come from a development server fed by the bundled `test/sample-agent`, which sends clearly labelled synthetic data (`sample-vm-windows`, model "Synthetic (test only) Sample VM"). A real deployment shows the same screens with data from real machines — nothing on the dashboard is hard-coded.*
+
+## What's new in 1.1.0
+
+- **New dashboard**: rewritten in React + TypeScript with Tailwind, still compiled into the server binary — fleet overview, computers, computer detail with hardware/performance/changes/software/snapshots tabs, enrollments, alerts, discovery, reports and settings.
+- **Prometheus `/metrics`**: every agent and fleet value in the Prometheus text format, protected by a scrape token (see [API_DOCUMENTATION](docs/API_DOCUMENTATION.md#prometheus-metrics)).
+- **Software diff**: what was added, removed or version-changed between two inventories of the same computer.
+- **Scheduled report emails**: daily PDF/CSV inventory, network, storage, distribution or change reports by SMTP.
+- **Agent auto-update**: agents check every 6 hours, verify a SHA256 and restart into the new build; off by default until you publish a build.
+- **GitHub Actions release pipeline**: `.github/workflows/release.yml` builds Windows, Linux, .deb, .rpm and macOS artifacts and attaches them to a tagged release.
 
 ## Download
 
@@ -28,9 +44,9 @@ Prebuilt packages are attached to the [latest release](https://github.com/unupun
 
 | File | Platform |
 |---|---|
-| `pcim-1.0.0-windows-setup.exe` | Windows 10/11, Server 2016+ (x64) — installer that registers both services |
-| `pcim-1.0.0-windows.zip` | Windows x64 portable |
-| `pcim_1.0.0_amd64.deb` / `pcim-1.0.0-1.x86_64.rpm` | Debian/Ubuntu and Fedora/RHEL/Rocky (systemd) |
+| `pcim-1.1.0-windows-setup.exe` | Windows 10/11, Server 2016+ (x64) — installer that registers both services |
+| `pcim-1.1.0-windows.zip` | Windows x64 portable |
+| `pcim_1.1.0_amd64.deb` / `pcim-1.1.0-1.x86_64.rpm` | Debian/Ubuntu and Fedora/RHEL/Rocky (systemd) |
 | `pcim-1.0.0-linux-amd64.tar.gz` / `-arm64.tar.gz` | Any Linux, with systemd units and `install.sh` |
 | `pcim-agent-macos-arm64`, `pcim-agent-macos-amd64` | macOS 12+ agents |
 

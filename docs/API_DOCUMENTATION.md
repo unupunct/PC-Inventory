@@ -240,3 +240,68 @@ curl -s -X POST http://server:8080/api/agent/heartbeat \
   -H 'Content-Type: application/json' \
   -d '{"agentId":"'"$ID"'","sentAt":"2026-11-16T10:00:00Z","agentVersion":"1.0.0"}'
 ```
+
+
+## Prometheus metrics
+
+`GET /metrics` exposes the same data the dashboard reads, in the Prometheus
+text format, so an existing monitoring stack can scrape it.
+
+* Authentication: `?token=<metrics_token>` or `Authorization: Bearer <metrics_token>`.
+  Set the token on the **Settings** page, or with `PCIM_METRICS_TOKEN`.
+  Without a token the endpoint falls back to an admin session; with a wrong
+  token it answers `401`.
+* A metric with no sample behind it is **not emitted** — missing data is never
+  reported as zero.
+
+| Metric | Meaning |
+| --- | --- |
+| `pcim_server_info{version,protocol}` | Build information |
+| `pcim_server_uptime_seconds` | Process uptime |
+| `pcim_agents{status}` | Agents by status |
+| `pcim_agent_online{agent_id,hostname,platform}` | 1 when the last heartbeat is inside the offline threshold |
+| `pcim_agent_last_heartbeat_timestamp_seconds` | Unix time of the last heartbeat |
+| `pcim_agent_last_metrics_timestamp_seconds` | Unix time of the last metrics report |
+| `pcim_agent_last_inventory_timestamp_seconds` | Unix time of the last inventory |
+| `pcim_agent_cpu_percent` | Latest CPU usage |
+| `pcim_agent_memory_used_bytes`, `pcim_agent_memory_total_bytes` | Latest memory |
+| `pcim_agent_disk_read_bytes_per_second`, `pcim_agent_disk_write_bytes_per_second` | Latest disk rates |
+| `pcim_agent_network_receive_bytes_per_second`, `pcim_agent_network_transmit_bytes_per_second` | Latest network rates |
+| `pcim_agent_memory_installed_bytes` | Memory installed, from inventory |
+| `pcim_agent_storage_total_bytes`, `pcim_agent_storage_free_bytes` | Storage, from inventory |
+| `pcim_agent_software_count` | Applications counted in the last inventory |
+| `pcim_alerts{status,severity}` | Alerts by status and severity |
+| `pcim_hardware_changes_total` | Hardware changes detected so far |
+
+Example scrape config:
+
+```yaml
+scrape_configs:
+  - job_name: pcim
+    scheme: http
+    static_configs:
+      - targets: ["192.168.1.10:8080"]
+    metrics_path: /metrics
+    params:
+      token: ["<metrics_token>"]
+```
+
+## Software diff
+
+`GET /api/agents/{id}/software-diff?from=<snapshotId>&to=<snapshotId>`
+
+Compares the software list of two inventory snapshots (default: the two most
+recent). Returns `added`, `removed`, `upgraded`, `downgraded` counts and a
+`changes` array of `{name, publisher, change, fromVersion, toVersion}`.
+`available` is false when there is only one snapshot, and `message` says why.
+
+## Agent updates
+
+| Endpoint | Purpose |
+| --- | --- |
+| `GET /api/agent/update?platform=&arch=&current=` | What is published for this platform (`enabled`, `update`, `message`) |
+| `GET /api/agent/update/download?platform=&arch=` | The binary itself, with `X-Agent-Version` and `X-Agent-SHA256` headers |
+
+Both require the agent token. Nothing is served unless auto-update is enabled
+on the Settings page. The agent verifies the SHA256 before replacing itself and
+restarts through its service manager.

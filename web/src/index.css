@@ -1,0 +1,26 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@layer base {
+  html, body, #root { height: 100%; }
+  body {
+    @apply bg-bg text-ink font-sans antialiased;
+    background-image: radial-gradient(1200px 600px at 50% -200px, #14203a 0%, transparent 60%);
+  }
+  ::-webkit-scrollbar { width: 10px; height: 10px; }
+  ::-webkit-scrollbar-thumb { background: #22304a; border-radius: 6px; }
+}
+
+@layer components {
+  .card { @apply bg-panel border border-line rounded-xl; }
+  .panel-title { @apply text-[12px] uppercase tracking-[0.09em] text-muted font-semibold px-4 py-3 border-b border-line; }
+  .btn { @apply inline-flex items-center gap-1.5 rounded-lg border border-line bg-panel2 px-3 py-1.5 text-sm text-ink hover:border-accent/60 hover:text-white transition-colors disabled:opacity-50 disabled:cursor-not-allowed; }
+  .btn-primary { @apply border-accent/60 bg-accent/15 text-white hover:bg-accent/25; }
+  .btn-danger { @apply border-bad/50 text-bad hover:bg-bad/10; }
+  .input { @apply w-full rounded-lg border border-line bg-panel2 px-3 py-2 text-sm text-ink placeholder:text-muted/70 focus:outline-none focus:border-accent/70; }
+  .tag { @apply inline-flex items-center gap-1 rounded-md px-1.5 py-0.5 text-[11.5px] font-medium; }
+  .th { @apply text-left text-[11.5px] uppercase tracking-wider text-muted font-semibold px-4 py-2.5 border-b border-line; }
+  .td { @apply px-4 py-3 border-b border-line/70 text-sm align-top; }
+  .link { @apply text-accent hover:underline; }
+}

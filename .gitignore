@@ -27,3 +27,8 @@ initial-admin-password.txt
 *.swp
 .DS_Store
 Thumbs.db
+
+# React dashboard dependencies and build output (the build lands in the
+# embedded webui dist folder, which IS committed so `go build` works alone)
+/web/node_modules/
+/internal/server/webui/dist/assets/
